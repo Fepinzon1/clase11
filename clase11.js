@@ -9,7 +9,7 @@ let express 	= 	require("express"),
 let conexion = mysql.createConnection({
 	host     	: 'localhost',
 	user     	: 'root',
-	password 	: '1234',
+	password 	: '',
 	database 	: 'encuesta',
 	multipleStatements : true
 });
@@ -27,23 +27,47 @@ app.get('/polls', (req, res) =>
 //Crear una encuesta...
 app.post('/createPoll', (req, res) =>
 {
-	res.json({});
+	
+	console.log(req.body);
+encuestas.push(req.body);
+res.json(encuestas);
+
 });
 
 app.put('/updatePoll', (req, res) =>
 {
 	//Saber si existe la encuesta y además que no tenga votos...
-	res.json({});
+	var ind = buscarID(req.body.id);
+
+console.log(req.body.id);
+
+encuestas[ind] = req.body;
+
+res.json(encuestas[ind]);
+
 });
 
 app.put('/votePOll', (req, res) =>
 {
-	res.json({});
+	let ind 		= buscarID(req.param("id")),
+		opcion		= Number(req.param("opcion")),
+		status		= false;
+	console.log(ind, opcion);
+	encuestas[ind].opciones[opcion - 1].cantidad++;
+	encuestas[ind].total++;
+	let porcentaje = encuestas[ind].opciones[opcion - 1].cantidad / encuestas[ind].total;
+	console.log(porcentaje);
+	//Se deberá actualizar la cantidad de respuesta de a encuesta...
+	//Adicional se deberá agregar la propiedad procentaje...
+	res.json({status : status, encuesta : ind >= 0 ? encuestas[ind] : []});
 });
 
 app.delete('/deletePoll/:id', (req, res) =>
 {
-	res.json({});
+	let ind = buscarID(req.param("id"));
+	res.json({status : ind >= 0 ? true : false});
+
+	encuestas.opcion.posición[-1];
 });
 
 app.get('/showPoll/:id', (req, res) =>
@@ -64,20 +88,20 @@ app.get("*", function(req, res)
 let muestraEncuesta = (token, callback) =>
 {
 	let encuesta = [];
-	queryMysql(`select * from encuestas where token = '${token}'`, (err, pregunta) =>
+	queryMysql(`select * from preguntas where token = '${token}'`, (err, pregunta) =>
 	{
 		if (err) throw err;
 		if(pregunta.length !== 0)
 		{
 			encuesta = pregunta[0];
 			//Traer las opciones de respuesta...
-			queryMysql(`select * from respuestas where idencuestas = ${pregunta[0].idencuestas}`, (err, respuestas) =>
+			queryMysql(`select * from opciones where idpregunta = ${pregunta[0].idpregunta}`, (err, opciones) =>
 			{
 				if (err) throw err;
 				let opcionesRespuesta = [];
-				for(let i = 0; i < respuestas.length; i++)
+				for(let i = 0; i < opciones.length; i++)
 				{
-					opcionesRespuesta.push(respuestas[i]);
+					opcionesRespuesta.push(opciones[i]);
 				}
 				encuesta.opciones = opcionesRespuesta;
 				callback(false, encuesta);
